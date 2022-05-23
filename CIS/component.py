@@ -2,13 +2,16 @@
 # Copyright 2021 Tampere University and VTT Technical Research Centre of Finland
 # This software was developed as a part of the ProCemPlus project: https://www.senecc.fi/projects/procemplus
 # This source code is licensed under the MIT license. See LICENSE in the repository root directory.
-# Author(s): Ville Heikkilä <ville.heikkila@tuni.fi>
+# Author(s): 
+# Ville Heikkilä <ville.heikkila@tuni.fi>
+# Mehdi Attar <mehdi.attar@tuni.fi>
 
 """
 Module containing a template for a simulation platform component,
 """
 
 import asyncio
+import json
 from typing import Any, cast, Set, Union
 
 from tools.components import AbstractSimulationComponent
@@ -16,21 +19,24 @@ from tools.exceptions.messages import MessageError
 from tools.messages import BaseMessage
 from tools.tools import FullLogger, load_environmental_variables
 
+from Fetcher import JsonFileCIS, NoDataAvailableForEpoch , JsonFileError
+
+
 # import all the required messages from installed libraries
-from simple_component.simple_message import SimpleMessage
+from CIS.simple_message import SimpleMessage
 
 # initialize logging object for the module
 LOGGER = FullLogger(__name__)
 
 # set the names of the used environment variables to Python variables
-SIMPLE_VALUE = "SIMPLE_VALUE"
-INPUT_COMPONENTS = "INPUT_COMPONENTS"
-OUTPUT_DELAY = "OUTPUT_DELAY"
 
-SIMPLE_TOPIC = "SIMPLE_TOPIC"
+# topics
+CIS_TOPIC = "CIS_TOPIC"
 
 # time interval in seconds on how often to check whether the component is still running
 TIMEOUT = 1.0
+
+CIS_JSON_FILE = "CIS_JSON_FILE"
 
 
 class SimpleComponent(AbstractSimulationComponent):
@@ -44,12 +50,13 @@ class SimpleComponent(AbstractSimulationComponent):
     # These should be adjusted to fit the actual component in development.
     def __init__(
             self,
-            simple_value: float,
-            input_components: Set[str],
-            output_delay: float):
+            CISDataJson: JsonFileCIS):
         """
         Description for the constructor including descriptions for the parameters.
         TODO: add proper description specific for this component.
+        The NIS component is initiated in the beginning of the simulation by the simulation manager
+        and in every epoch, it publishes the NIS data. The NIS data is stored in a class data called Fetcher.
+        
 
         - number_value (float): value to add to the output message SimpleValue attribute
         - input_components (Set[str]): set of the components names that provides input
@@ -58,11 +65,10 @@ class SimpleComponent(AbstractSimulationComponent):
         # Initialize the AbstractSimulationComponent using the values from the environmental variables.
         # This will initialize various variables including the message client for message bus access.
         super().__init__()
+        self._CIS_data = CISDataJson
 
         # Set the object variables for the extra parameters.
-        self._simple_value = simple_value
-        self._input_components = input_components
-        self._output_delay = output_delay
+        ##self._input_components = input_components
 
         # Add checks for the parameters if necessary
         # and set initialization error if there is a problem with the parameters.
@@ -79,10 +85,8 @@ class SimpleComponent(AbstractSimulationComponent):
         # Load environmental variables for those parameters that were not given to the constructor.
         # In this template the used topics are set in this way with given default values as an example.
         environment = load_environmental_variables(
-            (SIMPLE_TOPIC, str, "SimpleTopic")
-        )
-        self._simple_topic_base = cast(str, environment[SIMPLE_TOPIC])
-        self._simple_topic_output = ".".join([self._simple_topic_base, self.component_name])
+            (CIS_TOPIC, str, "Init.CIS.CustomerInfo"))
+        self._CIS_TOPIC = environment[ CIS_TOPIC ]
 
         # The easiest way to ensure that the component will listen to all necessary topics
         # is to set the self._other_topics variable with the list of the topics to listen to.
@@ -136,10 +140,6 @@ class SimpleComponent(AbstractSimulationComponent):
         """
 
         # set the number value used in the output message
-        if self._current_input_components:
-            self._current_number_sum = round(self._current_number_sum + self._simple_value, 3)
-        else:
-            self._current_number_sum = round(self._simple_value + self._latest_epoch / 1000, 3)
 
         # send the output message
         await asyncio.sleep(self._output_delay)
@@ -197,16 +197,17 @@ class SimpleComponent(AbstractSimulationComponent):
         """
         Sends a SimpleMessage using the self._current_number_sum as the value for attribute SimpleValue.
         """
+        # sending component data message
         try:
             simple_message = self._message_generator.get_message(
                 SimpleMessage,
                 EpochNumber=self._latest_epoch,
                 TriggeringMessageIds=self._triggering_message_ids,
-                SimpleValue=self._current_number_sum
+                SimpleValue=self._CIS_data
             )
 
             await self._rabbitmq_client.send_message(
-                topic_name=self._simple_topic_output,
+                topic_name=self._CIS_TOPIC,
                 message_bytes=simple_message.bytes()
             )
 
@@ -214,7 +215,6 @@ class SimpleComponent(AbstractSimulationComponent):
             # When there is an exception while creating the message, it is in most cases a serious error.
             LOGGER.error(f"{type(message_error).__name__}: {message_error}")
             await self.send_error_message("Internal error when creating simple message.")
-
 
 def create_component() -> SimpleComponent:
     """
@@ -225,28 +225,19 @@ def create_component() -> SimpleComponent:
 
     # Read the parameters for the component from the environment variables.
     environment_variables = load_environmental_variables(
-        (SIMPLE_VALUE, float, 1.0),   # the value to be added for SimpleValue attribute
-        (INPUT_COMPONENTS, str, ""),  # the comma-separated list of component names that provide input
-        (OUTPUT_DELAY, float, 0.0)    # delay in seconds before sending the result message for the epoch
+        (CIS_JSON_FILE, str, None )
     )
 
     # The cast function here is only used to help Python linters like pyright to recognize the proper type.
     # They are not necessary and can be omitted.
-    simple_value = cast(float, environment_variables[SIMPLE_VALUE])
     # put the input components to a set, only consider component with non-empty names
-    input_components = {
-        input_component
-        for input_component in cast(str, environment_variables[INPUT_COMPONENTS]).split(",")
-        if input_component
-    }
-    output_delay = cast(float, environment_variables[OUTPUT_DELAY])
+
+    json_file = environment_variables[CIS_JSON_FILE]
+    CISDataPython = JsonFileCIS.__init__(json_file)
+    CISDataJson = json.dumps(CISDataPython)
 
     # Create and return a new SimpleComponent object using the values from the environment variables
-    return SimpleComponent(
-        simple_value=simple_value,
-        input_components=input_components,
-        output_delay=output_delay
-    )
+    return SimpleComponent(CISDataJson)
 
 
 async def start_component():
