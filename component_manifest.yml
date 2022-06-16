@@ -1,18 +1,13 @@
-# The component manifest file for the Simple test component
+# The component manifest file for the CIS component
 
-Name: SimpleComponent
+Name: CIS
 Type: platform
-Description: "Simple test component for the Decoupled Simulation Platform"
-DockerImage: ghcr.io/simcesplatform/simple-component:latest
+Description: "Customer information system (CIS) component for the SimCES Platform"
+DockerImage: ghcr.io/mehdiattar-lab/customer-information-system
 Attributes:
-    SimpleValue:
-        Environment: SIMPLE_VALUE
+    CIS-File:
+        Environment: CIS_JSON_FILE
         Optional: false
-    InputComponents:
-        Environment: INPUT_COMPONENTS
-        Optional: true
-        Default: ""
-    OutputDelay:
-        Environment: OUTPUT_DELAY
-        Optional: true
-        Default: 0.0
+    CustomerDataTopic:
+        Environment: CIS_DATA_TOPIC
+        Optional: false
