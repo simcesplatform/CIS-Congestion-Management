@@ -49,7 +49,7 @@ class JsonFileCIS():
         Create object which uses the given json file that uses the given delimiter.
         Raises JsonFileError if file cannot be read e.g. file not found, or it is missing required attributes.
         '''
-        #LOGGER.warning("beginning of the file opener")
+        LOGGER.warning("beginning of the file opener")
         self._file = None  # required if there is no file and the __del__ method is executed
         try:
             self._file = open(file_name, newline="", encoding="utf-8")
@@ -57,7 +57,7 @@ class JsonFileCIS():
         except Exception as e:
             raise JsonFileError(f'Unable to read json file {file_name}: {str( e )}.')
 
-        #LOGGER.warning("after openning the json file")
+        LOGGER.warning("after openning the json file")
         try:
             self._pythonComponent = json.load(self._file)
         except Exception as e:

@@ -77,7 +77,7 @@ class CISCustomerMessage(AbstractResultMessage):
         if self._check_resource_id(resource_id):
             self.__resource_id=resource_id
             return
-        raise MessageValueError("'{:s}' is an invalid value for BusName".format(resource_id))
+        raise MessageValueError("'{:s}' is an invalid value for ResourceId".format(resource_id))
 
     @classmethod
     def _check_resource_id(cls, resource_id: List[str]) -> bool:
@@ -96,7 +96,7 @@ class CISCustomerMessage(AbstractResultMessage):
         if self._check_customer_id(customer_id):
             self.__customer_id=customer_id
         else:
-            raise MessageValueError("Invalid value, {}, for attribute: bus_type".format(customer_id))
+            raise MessageValueError("Invalid value, {}, for attribute: CustomerId".format(customer_id))
 
     @classmethod
     def _check_customer_id(cls, customer_id: List[str]) -> bool:
@@ -114,7 +114,7 @@ class CISCustomerMessage(AbstractResultMessage):
         if self._check_bus_name(bus_name):
             self.__bus_name=bus_name
         else:
-            raise MessageValueError("Invalid value, {}, for attribute: bus_type".format(bus_name))
+            raise MessageValueError("Invalid value, {}, for attribute: BusName".format(bus_name))
 
     @classmethod
     def _check_bus_name(cls, bus_name: List[str]) -> bool:

@@ -10,7 +10,7 @@
 import asyncio
 import json
 # from multiprocessing import _BoundedSemaphoreType
-# from typing import Any, cast, Set, Union
+#from typing import Any, cast, Set, Union, Dict, List
 
 from tools.components import AbstractSimulationComponent
 from tools.exceptions.messages import MessageError
@@ -18,7 +18,6 @@ from tools.exceptions.messages import MessageError
 from tools.tools import FullLogger, load_environmental_variables
 
 from Fetcher import JsonFileCIS
-
 
 # import all the required messages from installed libraries
 from CIS.CISCustomerMessage import CISCustomerMessage
@@ -85,17 +84,18 @@ class CIS(AbstractSimulationComponent): # the NIS class inherits from AbstractSi
                     CISCustomerMessage,
                     EpochNumber=self._latest_epoch,
                     TriggeringMessageIds=self._triggering_message_ids,
-                    BusName=self._customer_data["ResourceId"],
-                    BusType=self._customer_data["CustomerId"],
-                    BusVoltageBase=self._customer_data["BusName"]
+                    ResourceId=self._customer_data["ResourceId"],
+                    CustomerId=self._customer_data["CustomerId"],
+                    BusName=self._customer_data["BusName"]
                 )
+
             except (ValueError, TypeError, MessageError) as message_error:
                 # When there is an exception while creating the message, it is in most cases a serious error.
                 LOGGER.error(f"{type(message_error).__name__}: {message_error}")
                 await self.send_error_message("Internal error when creating customer message.")
                 return False
 
-            await self._send_message(customer_message, self.BusDataTopic)
+            await self._send_message(customer_message, self.CustomerDataTopic)
 
         # return True to indicate that the component is finished with the current epoch
         return True
@@ -125,6 +125,7 @@ async def start_component():
     """
     Creates and starts a SimpleComponent component.
     """
+
     simple_component = create_component()
 
     # The component will only start listening to the message bus once the start() method has been called.
