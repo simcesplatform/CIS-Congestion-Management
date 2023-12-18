@@ -1,4 +1,3 @@
-
 # CIS
 
 ## Introduction
@@ -24,7 +23,7 @@ python3 -m venv .env
 pip install -r requirements.txt
 ```
 
-## **Workflow of NIS**
+## **Workflow of CIS**
 
 1. CIS publishes the [customer ](https://simcesplatform.github.io/energy_msg-init-cis-customerinfo/)relared data.
 
@@ -32,7 +31,7 @@ pip install -r requirements.txt
 
 In beginning of the simulation the CIS component will wait for [SimState](https://simcesplatform.github.io/core_msg-simstate/)(running) message, when the message is received component will initialize and send [Status](https://simcesplatform.github.io/core_msg-status/)(Ready) message with epoch number 0. If SimState(stopped) is received component will close down. Other message are ignored at this stage.
 
-After startup component will begin to listen for [epoch](https://simcesplatform.github.io/core_msg-epoch/) messages. In the current implementation, it only published the customer information data in the epoch 1. For other epoches other than 1, it only sends ready message when epoch starts.
+After startup component will begin to listen for [epoch](https://simcesplatform.github.io/core_msg-epoch/) messages. In the current implementation, it only publishes the customer information data in the epoch 1. For other epoches other than 1, it only sends ready message when epoch starts.
 
 If at any stage of the execution Status (Error) message is received component will immediately close down
 
@@ -57,7 +56,7 @@ The following packages are needed.
 The component is based on the AbstractSimulationCompoment class from the [simulation-tools](https://github.com/simcesplatform/simulation-tools)
  repository. It is configured via environment variables which include common variables for all AbstractSimulationComponent subclasses such as rabbitmq connection and component name. Environment variables specific to this component are listed below:
 
-- NIS_JSON_FILE (required): Location of the json file which contains the electricty grid's customer data. Relative file paths are in relation to the current working directory.
+- CIS_JSON_FILE (required): Location of the json file which contains the electricty grid's customer data. Relative file paths are in relation to the current working directory.
 
 When using a json file as input data. the file must contain the following keys: ResourceId, CustomerId, BusName.
 
